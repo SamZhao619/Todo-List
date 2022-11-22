@@ -1,0 +1,292 @@
+{% extends 'admin/master.html' %}   #为了保持一致，继承admin/master.html模板
+
+{% block head %}
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <!-- 时间选择器样式表 -->
+    <link href="https://cdn.bootcss.com/bootstrap-datetimepicker/4.17.47/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
+    <!-- jquery -->
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    <!-- 时间选择器前置脚本 -->
+    <script src="https://cdn.bootcss.com/moment.js/2.22.1/moment-with-locales.min.js"></script>
+    <!-- 时间选择器核心脚本 -->
+    <script src="https://cdn.bootcss.com/bootstrap-datetimepicker/4.17.47/js/bootstrap-datetimepicker.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/underscore.js/1.13.1/underscore-min.js"></script>
+
+{% endblock %}
+
+{% block body %}
+
+    {% raw %}
+        <div id="app">
+            <div class="row">
+                <div class="span3">
+                    <div class="title">
+                        <span style="margin-right: 3px"><strong>待办详情</strong></span>
+                    </div>
+                    <p>编号：<strong>{{ current_todo_data.todo_No }}</strong></p>
+                    <p>待办名称：</p>
+                    <h4>{{ current_todo_data.todo_name }}</h4>
+                    <p>待办描述：</p>
+                    <h4>{{ current_todo_data.todo_desc }}</h4>
+                    <p>截止时间：</p>
+                    <h4>{{ current_todo_data.todo_date }}</h4>
+                </div>
+                <div class="span9">
+                    <button class="btn btn-primary" type="button" @click="handle_add">添加</button>
+                    <div class="title">
+                        <span style="margin-right: 3px"><strong>未完成</strong></span>
+                        <span class="badge badge-warning">{{ todo_list.todo_nofinish.length }}</span>
+                    </div>
+                    <div class="todo_block">
+                        <div class="row">
+                            <template v-for="i in todo_list.todo_nofinish">
+                                <div class="span2 todo_card" :index="i.todo_No" @click.stop="handleClick(i.todo_No)">
+                                    <div class="todo_no">
+                                        <span>编号:{{ i.todo_No }}</span>
+                                    </div>
+                                    <div>
+                                        <h4 class="todo_name">{{ i.todo_name }}</h4>
+                                        <p class="todo_desc">{{ i.todo_desc }}</p>
+                                        <p class="todo_date">{{ i.todo_date }}</p>
+                                    </div>
+                                    <div class="remove_button">
+                                        <i class="icon-edit" @click.stop="handle_edit(i.todo_No)"></i>
+                                        <i class="icon-remove" @click.stop="handle_delete(i.todo_No)"></i>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    <div class="title" style="margin-top: 12px">
+                        <span style="margin-right: 3px"><strong>已完成</strong></span>
+                        <span class="badge badge-success">{{ todo_list.todo_finish.length }}</span>
+                    </div>
+                    <div class="todo_block">
+                        <div class="row">
+                            <template v-for="i in todo_list.todo_finish">
+                                <div class="span2 todo_card" :index="i.todo_No" @click.stop="handleClick(i.todo_No)">
+                                    <div class="todo_no">
+                                        <span>编号:{{ i.todo_No }}</span>
+                                    </div>
+                                    <div>
+                                        <h4 class="todo_name">{{ i.todo_name }}</h4>
+                                        <p class="todo_desc">{{ i.todo_desc }}</p>
+                                        <p class="todo_date">{{ i.todo_date }}</p>
+                                    </div>
+                                    <div class="remove_button">
+                                        <i class="icon-edit" @click.stop="handle_edit(i.todo_No)"></i>
+                                        <i class="icon-remove" @click.stop="handle_delete(i.todo_No)"></i>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+
+        <!-- 添加待办信息模态框 -->
+        <div id="add_Modal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+            <h3 id="myModalLabel">待办任务</h3>
+          </div>
+          <div class="modal-body" style="height: 500px">
+            <form class="form-horizontal">
+                <div id="todo_No_show" class="control-group">
+                <label class="control-label" for="todo_No">编号</label>
+                <div class="controls">
+                  <strong id="todo_No"></strong>
+                </div>
+              </div>
+              <div class="control-group">
+                <label class="control-label" for="todo_name">待办名称</label>
+                <div class="controls">
+                  <input type="text" id="todo_name" placeholder="请输入待办名称">
+                </div>
+              </div>
+                <div class="control-group">
+                    <label class="control-label" for="todo_desc">待办描述</label>
+                    <div class="controls">
+                        <textarea rows="3" id="todo_desc" placeholder="请输入待办描述"></textarea>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="todo_date">截止时间</label>
+                    <div class="controls">
+                        <input type="text" id="todo_date" placeholder="请选择截止时间">
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="isfinish">是否完成</label>
+                    <div class="controls">
+                        <select id="isfinish">
+                            <option value="0">未完成</option>
+                            <option value="1">完成</option>
+                        </select>
+                    </div>
+                </div>
+
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button class="btn" data-dismiss="modal" aria-hidden="true">取消</button>
+            <button class="btn btn-primary" onclick="return app.add_todo()">保存</button>
+          </div>
+        </div>
+
+        <!-- 删除待办信息模态框 -->
+        <div id="delete_Modal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+            <h3 id="myModalLabel">删除待办</h3>
+          </div>
+          <div class="modal-body">
+            <p>是否删除该待办信息？删除后将无法恢复，请谨慎操作！</p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn" data-dismiss="modal" aria-hidden="true">取消</button>
+            <button class="btn btn-danger" onclick="return app.delete_todo()">删除</button>
+          </div>
+        </div>
+    {% endraw %}
+
+    <script>
+        const app = new Vue({
+            el:"#app",
+            data(){
+                return{
+                    todo_list:{todo_nofinish:[],todo_finish:[]},
+                    current_todo_id:null,
+                    current_todo_data:{},
+                    edit_or_add_flag:""
+                }
+            },
+            methods:{
+                get_todo_list(){
+                    axios.get("/get_all_todo/").then(rsp => {
+                        if (rsp.data.code === 0){
+                            this.todo_list = rsp.data.data
+                        }
+                    })
+                },
+                handle_add(){
+                    $('#add_Modal').modal('show')
+                    this.edit_or_add_flag = "添加"
+                    $("#todo_No_show").hide()
+                    $("#todo_name").val("");
+                    $("#todo_desc").val("");
+                    $("#todo_date").val("");
+                    $("#isfinish").val("0");
+                },
+                handleClick(id){
+                    this.current_todo_data = _.where(this.todo_list.todo_nofinish,{todo_No:id}).concat(_.where(this.todo_list.todo_finish,{todo_No:id}))[0]
+
+
+                },
+                handle_delete(id){
+                    $('#delete_Modal').modal('show')
+                    this.current_todo_id = id
+                },
+                handle_edit(id){
+                    $('#add_Modal').modal('show')
+                    this.edit_or_add_flag = "编辑"
+                    $("#todo_No_show").show()
+                    this.current_todo_id = id
+                    let data = _.where(this.todo_list.todo_nofinish,{todo_No:id}).concat(_.where(this.todo_list.todo_finish,{todo_No:id}))
+                    $("#todo_No").text(id);
+                    $("#todo_name").val(data[0].todo_name);
+                    $("#todo_desc").val(data[0].todo_desc);
+                    $("#todo_date").val(data[0].todo_date);
+                    $("#isfinish").val(data[0].isfinish.toString());
+                },
+                delete_todo(){
+                    axios.post("/delete_todo/",{todo_No:this.current_todo_id}).then(rsp => {
+                        if(rsp.data.code === 0){
+                            alert("删除成功！")
+                            location.reload();
+                        }
+                        else {
+                            alert(rsp.data.msg)
+                        }
+                        $('#delete_Modal').modal('hide')
+                    })
+                },
+                add_todo(){
+                    let url = this.edit_or_add_flag === "add"?"/create_todo/":"/update_todo/"
+                    axios.post(url,{
+                        todo_name:$("#todo_name").val(),
+                        todo_desc:$("#todo_desc").val(),
+                        todo_date:$("#todo_date").val(),
+                        isfinish:$("#isfinish").val(),
+                        todo_No:this.current_todo_id,
+                    }).then(rsp => {
+                        if(rsp.data.code === 0){
+                            alert(this.edit_or_add_flag + "成功！")
+                            location.reload();
+                        }
+                        else {
+                            alert(rsp.data.msg)
+                        }
+                        $('#add_Modal').modal('hide')
+                    })
+                }
+            },
+            created(){
+                this.get_todo_list()
+                $("#todo_date").datetimepicker({
+                    format: 'YYYY-MM-DD HH:mm',
+                    locale: moment.locale('zh-CN')
+                });
+            },
+        })
+    </script>
+
+    <style>
+        body{
+            background-color: #f4f4f5;
+        }
+        .title{
+            padding: 12px;
+            border-bottom: 1px solid #C0C4CC;
+            margin-right: 6px;
+        }
+        .todo_block{
+            max-height: 275px;
+            width: 100%;
+            overflow: auto;
+        }
+        .todo_card{
+            background-color: white;
+            border-radius: 10px;
+            padding: 12px;
+            height: 100px;
+            margin-top: 12px;
+            cursor: pointer;
+            position: relative;
+        }
+        .todo_desc{
+            font-size: 13px;
+            color: #999;
+            height: 40px    ;
+        }
+        .todo_date{
+            font-size: 12px;
+            color: #999;
+        }
+        .remove_button{
+            position: absolute;
+            right: 8px;
+            bottom:6px;
+            z-index: 99;
+        }
+        .todo_no{
+            position: absolute;
+            right: 8px;
+            z-index: 99;
+            font-size: 10px;
+            color: #999;
+        }
+    </style>
+{% endblock %}
